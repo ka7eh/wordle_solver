@@ -18,9 +18,15 @@ arg_parser.add_argument(
     help="[Optional] The word to solve for. If not set, uses Wordle site.",
     nargs="?",
 )
-arg_parser.add_argument("--auto", action="store_true", help="Automatically guess", default=False)
-arg_parser.add_argument("--random", help="[Optional] Use random word.", action="store_true")
-arg_parser.add_argument("--tries", help="[Optional] Number of tries to make.", type=int, default=1)
+arg_parser.add_argument(
+    "--auto", action="store_true", help="Automatically guess", default=False
+)
+arg_parser.add_argument(
+    "--random", help="[Optional] Use random word.", action="store_true"
+)
+arg_parser.add_argument(
+    "--tries", help="[Optional] Number of tries to make.", type=int, default=1
+)
 
 
 class Solver:
@@ -43,11 +49,6 @@ class Solver:
         )
         for letter in self.present_letters:
             if letter in word:
-                weight -= 1
-
-        # Let's prioritize words with more vowels!
-        for c in word:
-            if c in "aeiou":
                 weight -= 1
 
         return weight
@@ -122,7 +123,7 @@ class Solver:
             if is_valid_guess:
                 guess_count += 1
                 if all(self.correct_letters):
-                    answer = ''.join(self.correct_letters)
+                    answer = "".join(self.correct_letters)
                     logger.debug(f"Answer: {answer}")
                     return answer
 
@@ -144,6 +145,7 @@ class Solver:
             rows = page.locator("game-row")
 
             guess_count = 0
+            answer = None
             while guess_count < 6:
                 if self.auto:
                     guess = "0"
@@ -183,7 +185,7 @@ class Solver:
                     elif evaluation == "present":
                         self.present_letters.setdefault(guess[i], set()).add(i)
                     else:
-                        self.absent_letters.append(guess[i])
+                        self.absent_letters.add(guess[i])
 
                 logger.debug(f"Answer status: {self.correct_letters}")
                 logger.debug(f"Present letters: {self.present_letters}")
@@ -192,21 +194,24 @@ class Solver:
                 if is_valid_guess:
                     guess_count += 1
                     if all(self.correct_letters):
-                        answer = ''.join(self.correct_letters)
+                        answer = "".join(self.correct_letters)
                         logger.debug(f"Answer: {answer}")
                         break
 
             browser.close()
 
+        return answer
+
 
 if __name__ == "__main__":
     args = arg_parser.parse_args()
+    word = None
     if args.random:
         with open("words.txt", "r") as f:
             word = random.choice(f.read().splitlines())
     elif args.word:
         word = args.word
-    
+
     if word:
         success_count = 0
         for _ in range(args.tries):
@@ -215,4 +220,4 @@ if __name__ == "__main__":
                 success_count += 1
         print(f"{success_count}/{args.tries}")
     else:
-        Solver(auto=args.auto).solve_wordle()
+        print(Solver(auto=args.auto).solve_wordle())
