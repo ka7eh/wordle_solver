@@ -135,7 +135,8 @@ class Solver:
             page.goto("https://www.nytimes.com/games/wordle/index.html")
 
             # Reject cookies
-            page.click("#pz-gdpr-btn-reject")
+            if page.locator("#pz-gdpr-btn-reject").count():
+                page.click("#pz-gdpr-btn-reject")
 
             # Close modals (should be one for help)
             modals = page.locator("game-modal")
