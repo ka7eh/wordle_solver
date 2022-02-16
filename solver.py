@@ -10,8 +10,6 @@ import time
 import Levenshtein
 from playwright.sync_api import sync_playwright
 
-logger = logging.getLogger(__name__)
-
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument(
     "word",
@@ -27,6 +25,14 @@ arg_parser.add_argument(
 arg_parser.add_argument(
     "--tries", help="[Optional] Number of tries to make.", type=int, default=1
 )
+arg_parser.add_argument("--debug", action="store_true", default=False)
+
+args = arg_parser.parse_args()
+
+LOG_LEVEL = logging.DEBUG if args.debug else logging.INFO
+
+logging.basicConfig(level=LOG_LEVEL, format="%(levelname)-8s %(message)s")
+logger = logging.getLogger("Wordle Solver")
 
 
 class Solver:
@@ -102,9 +108,9 @@ class Solver:
             if guess == "0":
                 self.update_word_weights()
                 guess = random.choice(self.words[: self.get_min_weight_count()])[0]
-                logger.debug(f"Trying '{guess}'")
+                logger.info(f"Trying '{guess}'")
             elif len(guess) != 5 and guess.lower() not in self.words:
-                logger.debug("Enter a valid 5 letter word")
+                logger.info("Enter a valid 5 letter word")
                 continue
 
             is_valid_guess = True
@@ -116,15 +122,15 @@ class Solver:
                 else:
                     self.absent_letters.add(guess[i])
 
-            logger.debug(f"Answer status: {self.correct_letters}")
-            logger.debug(f"Present letters: {self.present_letters}")
-            logger.debug(f"Absent letters: {self.absent_letters}")
+            logger.info(
+                f"Answer status: {self.correct_letters}\tPresent letters: {self.present_letters}\t\tAbsent letters: {self.absent_letters}\n"
+            )
 
             if is_valid_guess:
                 guess_count += 1
                 if all(self.correct_letters):
                     answer = "".join(self.correct_letters)
-                    logger.debug(f"Answer: {answer}")
+                    logger.info(f"Answer: {answer}")
                     return answer
 
     def solve_wordle(self):
@@ -156,9 +162,9 @@ class Solver:
                 if guess == "0":
                     self.update_word_weights()
                     guess = random.choice(self.words[: self.get_min_weight_count()])[0]
-                    logger.debug(f"Trying '{guess}'")
+                    logger.info(f"Trying '{guess}'")
                 elif len(guess) != 5 and guess.lower() not in self.words:
-                    logger.debug("Enter a valid 5 letter word")
+                    logger.info("Enter a valid 5 letter word")
                     continue
 
                 page.type("html", guess)
@@ -175,7 +181,7 @@ class Solver:
                     evaluation = tile.get_attribute("evaluation")
                     if not evaluation:
                         # This should be captured by the first tile. If it has not evaluation attribute, it means the word was not accepted.
-                        logger.debug("Invalid word.")
+                        logger.info("Invalid word.")
                         for _ in range(5):
                             page.press("html", key="Backspace")
                         is_valid_guess = False
@@ -188,15 +194,15 @@ class Solver:
                     else:
                         self.absent_letters.add(guess[i])
 
-                logger.debug(f"Answer status: {self.correct_letters}")
-                logger.debug(f"Present letters: {self.present_letters}")
-                logger.debug(f"Absent letters: {self.absent_letters}")
+                logger.info(
+                    f"Answer status: {self.correct_letters}\tPresent letters: {self.present_letters}\t\tAbsent letters: {self.absent_letters}\n"
+                )
 
                 if is_valid_guess:
                     guess_count += 1
                     if all(self.correct_letters):
                         answer = "".join(self.correct_letters)
-                        logger.debug(f"Answer: {answer}")
+                        logger.info(f"Answer: {answer}")
                         break
 
             browser.close()
@@ -205,7 +211,6 @@ class Solver:
 
 
 if __name__ == "__main__":
-    args = arg_parser.parse_args()
     word = None
     if args.random:
         with open("words.txt", "r") as f:
