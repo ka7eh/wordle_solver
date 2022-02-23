@@ -4167,6 +4167,7 @@ troll
 troop
 trope
 trots
+trove
 trout
 truce
 truck
