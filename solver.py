@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import pathlib
 import random
 import re
 from textwrap import indent
@@ -48,6 +49,12 @@ class Solver:
         with open("words.txt", "r") as f:
             self.words = [(w, self.get_word_weight(w)) for w in f.read().splitlines()]
             self.words.sort(key=lambda x: x[1])
+        
+        if not pathlib.Path("invalid_words.txt").exists():
+            pathlib.Path("invalid_words.txt").touch()
+
+        with open("invalid_words.txt", "r") as f:
+            self.invalid_words = f.read().splitlines()
 
     def get_word_weight(self, word):
         weight = Levenshtein.distance(
@@ -109,7 +116,7 @@ class Solver:
                 self.update_word_weights()
                 guess = random.choice(self.words[: self.get_min_weight_count()])[0]
                 logger.info(f"Trying '{guess}'")
-            elif len(guess) != 5 and guess.lower() not in self.words:
+            elif len(guess) != 5 and guess.lower() not in self.words or guess.lower() in self.invalid_words:
                 logger.info("Enter a valid 5 letter word")
                 continue
 
@@ -163,7 +170,7 @@ class Solver:
                     self.update_word_weights()
                     guess = random.choice(self.words[: self.get_min_weight_count()])[0]
                     logger.info(f"Trying '{guess}'")
-                elif len(guess) != 5 and guess.lower() not in self.words:
+                elif len(guess) != 5 and guess.lower() not in self.words or guess.lower() in self.invalid_words:
                     logger.info("Enter a valid 5 letter word")
                     continue
 
@@ -182,6 +189,9 @@ class Solver:
                     if not evaluation:
                         # This should be captured by the first tile. If it has not evaluation attribute, it means the word was not accepted.
                         logger.info("Invalid word.")
+                        self.invalid_words.append(guess.lower())
+                        with open("invalid_words.txt", "a") as f:
+                            f.write(f"{guess}\n")
                         for _ in range(5):
                             page.press("html", key="Backspace")
                         is_valid_guess = False
